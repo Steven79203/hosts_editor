@@ -69,7 +69,7 @@ OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças" | dmen
 case $OP in
 	'Edição Manual') manual ;; 
 	'Desbloquear Domínios') comment ;;
-	to'Reverter Mudanças') uncomment ;;
+	'Reverter Mudanças') uncomment ;;
 	*) return 0;
 esac
 
