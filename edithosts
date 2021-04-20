@@ -3,10 +3,10 @@
 # Edithost
 # 2021 - Steven79203 
 
-export HOSTS_TMP=/tmp/dothosts.tmp
-export HOSTS=/etc/dothosts
-export PATT_TMP=/tmp/pattern.tmp
-export DIFF_DIR=~/.config/hosts_diff
+export HOSTS_TMP=/tmp/dothosts.tmp 	# Arquivo temporário com mudanças
+export HOSTS=/etc/dothosts 		# Arquivo original
+export PATT_TMP=/tmp/pattern.tmp 	# Padrões encontrados
+export DIFF_DIR=~/.config/hosts_diff 	# Diretório de diffs
 
 manual(){
 	# Cópia temporária para /tmp/dothosts.tmp
@@ -69,7 +69,7 @@ OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças" | dmen
 case $OP in
 	'Edição Manual') manual ;; 
 	'Desbloquear Domínios') comment ;;
-	'Reverter Mudanças') uncomment ;;
+	to'Reverter Mudanças') uncomment ;;
 	*) return 0;
 esac
 
