@@ -15,11 +15,13 @@ manual(){
 	# Abre o editor em $EDITOR
 	$EDITOR $HOSTS_TMP
 
-	# Aplica mudanças
+	# Gera arquivo diff e remove tmp
 	DIFF=$DIFF_DIR/dothosts_medit_$(date "+%d-%m-%Y-%H-%M-%S").diff
-	diff -u $HOSTS $HOSTS_TMP > $DIFF 
-	sudo patch $HOSTS $DIFF
-	rm $HOSTS_TMP
+	diff -u $HOSTS $HOSTS_TMP > $DIFF; rm $HOSTS_TMP
+
+	# Descarta diff se estive vázio
+	[[ -s $DIFF ]] && sudo patch $HOSTS $DIFF || rm $DIFF;
+
 	return 0;
 }
 
