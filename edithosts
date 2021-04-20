@@ -1,0 +1,72 @@
+#!/bin/zsh 
+
+# Editando arquivo hosts # 
+# edithosts2
+
+export HOSTS_TMP=/tmp/dothosts.tmp
+export HOSTS=/etc/dothosts
+export PATT_TMP=/tmp/pattern.tmp
+export DIR=~/Custom-Scripts/hosts_diff
+
+manual(){
+	# Cópia temporária para /tmp/dothosts.tmp
+	cp $HOSTS $HOSTS_TMP
+	
+	# Abre o editor em $EDITOR
+	$EDITOR $HOSTS_TMP
+
+	# Aplica mudanças
+	DIFF=$DIR/dothosts_medit_$(date "+%d-%m-%Y-%H-%M-%S").diff
+	diff -u $HOSTS $HOSTS_TMP > $DIFF 
+	sudo patch $HOSTS $DIFF
+	rm $HOSTS_TMP
+	return 0;
+}
+
+comment(){
+
+	echo -n "PADRÃO: "; read PATT
+	grep $PATT $HOSTS > $PATT_TMP
+
+	DIFF=$DIR/dothosts_$PATT.diff
+	sed "/^[^\#] *[a-zA-Z0-9\.\ ]*$PATT/ s/./#&/" $HOSTS > $PATT_TMP && diff -u $HOSTS $PATT_TMP > $DIFF
+
+	if [[ -s $DIFF ]]; then
+		bat $DIFF 
+		echo -n "Aplicar modificações? [S/N]: "; read CONF;
+
+		if [[ $CONF == 's' || $CONF == 'S' ]]; then
+			sudo patch $HOSTS $DIFF 
+		else
+			rm $DIFF
+			echo "Nada foi modificado..."
+		fi
+	else
+		rm $DIFF
+		echo "URL já desbloqueada ou padrão não encontrado. Saindo..."
+		return 0;
+	fi
+	rm $PATT_TMP
+}
+
+uncomment(){
+	# Verificando a presença de arquivos diff
+	[[ $(ls $DIR | wc -l) == 0 ]] && echo "Sem histórico de modificações. Saindo..." && return 0;
+	while true; do
+		DIFF=$( ls $DIR | grep "diff$" | dmenu -l 10 -p "Qual patch reverter?"); [[ -z $DIFF ]] && return 0;
+		RDIFF=$DIR/$DIFF
+		bat $RDIFF
+		echo -n "Aplicar mudanças? [S/N]: "; read CONF
+		[[ $CONF == 's' || $CONF == 'S' ]] && sudo patch -R $HOSTS "$RDIFF" && rm $RDIFF || continue;
+	done
+}
+
+OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças\n" | dmenu -p "Operação: ")
+
+case $OP in
+	'Edição Manual') manual ;; 
+	'Desbloquear Domínios') comment ;;
+	'Reverter Mudanças') uncomment ;;
+	*) return 0;
+esac
+
