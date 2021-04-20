@@ -1,13 +1,12 @@
 #!/bin/zsh 
 
-# Enviado ao Github
-# Editando arquivo hosts # 
-# edithosts2
+# Edithost
+# 2021 - Steven79203 
 
 export HOSTS_TMP=/tmp/dothosts.tmp
 export HOSTS=/etc/dothosts
 export PATT_TMP=/tmp/pattern.tmp
-export DIR=~/Custom-Scripts/hosts_diff
+export DIFF_DIR=~/.config/hosts_diff
 
 manual(){
 	# Cópia temporária para /tmp/dothosts.tmp
@@ -17,7 +16,7 @@ manual(){
 	$EDITOR $HOSTS_TMP
 
 	# Aplica mudanças
-	DIFF=$DIR/dothosts_medit_$(date "+%d-%m-%Y-%H-%M-%S").diff
+	DIFF=$DIFF_DIR/dothosts_medit_$(date "+%d-%m-%Y-%H-%M-%S").diff
 	diff -u $HOSTS $HOSTS_TMP > $DIFF 
 	sudo patch $HOSTS $DIFF
 	rm $HOSTS_TMP
@@ -29,7 +28,7 @@ comment(){
 	echo -n "PADRÃO: "; read PATT
 	grep $PATT $HOSTS > $PATT_TMP
 
-	DIFF=$DIR/dothosts_$PATT.diff
+	DIFF=$DIFF_DIR/dothosts_$PATT.diff
 	sed "/^[^\#] *[a-zA-Z0-9\.\ ]*$PATT/ s/./#&/" $HOSTS > $PATT_TMP && diff -u $HOSTS $PATT_TMP > $DIFF
 
 	if [[ -s $DIFF ]]; then
@@ -52,17 +51,20 @@ comment(){
 
 uncomment(){
 	# Verificando a presença de arquivos diff
-	[[ $(ls $DIR | wc -l) == 0 ]] && echo "Sem histórico de modificações. Saindo..." && return 0;
+	[[ $(ls $DIFF_DIR | wc -l) == 0 ]] && echo "Sem histórico de modificações. Saindo..." && return 0;
 	while true; do
-		DIFF=$( ls $DIR | grep "diff$" | dmenu -l 10 -p "Qual patch reverter?"); [[ -z $DIFF ]] && return 0;
-		RDIFF=$DIR/$DIFF
+		DIFF=$( ls $DIFF_DIR | grep "diff$" | dmenu -l 10 -p "Qual patch reverter?"); [[ -z $DIFF ]] && return 0;
+		RDIFF=$DIFF_DIR/$DIFF
 		bat $RDIFF
 		echo -n "Aplicar mudanças? [S/N]: "; read CONF
 		[[ $CONF == 's' || $CONF == 'S' ]] && sudo patch -R $HOSTS "$RDIFF" && rm $RDIFF || continue;
 	done
 }
 
-OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças\n" | dmenu -p "Operação: ")
+# Verifica se o diretório hosts_diff existe. Caso contrário cria um em ~/.config/hosts_diff
+[[ -e !$DIFF_DIR ]] && mkdir ~/.config/hosts_diff
+
+OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças" | dmenu -p "Operação: ")
 
 case $OP in
 	'Edição Manual') manual ;; 
