@@ -1,6 +1,7 @@
 #!/bin/zsh 
 
 # Edithost
+# Aplicado chave SSH
 # 2021 - Steven79203 
 
 #export EDITOR=nvim Coloque seu editor de preferência (nvim, vim nano, etc)
