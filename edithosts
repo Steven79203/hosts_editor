@@ -3,16 +3,17 @@
 # Edithost
 # 2021 - Steven79203 
 
-export HOSTS_TMP=/tmp/dothosts.tmp 	# Arquivo temporário com mudanças
-export HOSTS=/etc/dothosts 		# Arquivo original
-export PATT_TMP=/tmp/pattern.tmp 	# Padrões encontrados
-export DIFF_DIR=~/.config/hosts_diff 	# Diretório de diffs
+#export EDITOR=nvim Coloque seu editor de preferência (nvim, vim nano, etc)
+ export HOSTS_TMP=/tmp/hosts.tmp 	# Arquivo temporário com as mudanças
+ export HOSTS=/etc/hosts 		# Arquivo original
+ export PATT_TMP=/tmp/pattern.tmp 	# Padrões encontrados
+ export DIFF_DIR=~/.config/hosts_diff 	  # Diretório dos .diffs
 
 manual(){
 	# Cópia temporária para /tmp/dothosts.tmp
 	cp $HOSTS $HOSTS_TMP
 	
-	# Abre o editor em $EDITOR
+	# Abre $HOSTS_TMP em $EDITOR
 	$EDITOR $HOSTS_TMP
 
 	# Gera arquivo diff e remove tmp
@@ -28,8 +29,6 @@ manual(){
 comment(){
 
 	echo -n "PADRÃO: "; read PATT
-	grep $PATT $HOSTS > $PATT_TMP
-
 	DIFF=$DIFF_DIR/dothosts_$PATT.diff
 	sed "/^[^\#] *[a-zA-Z0-9\.\ ]*$PATT/ s/./#&/" $HOSTS > $PATT_TMP && diff -u $HOSTS $PATT_TMP > $DIFF
 
