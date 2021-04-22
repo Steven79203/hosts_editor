@@ -17,12 +17,16 @@ manual(){
 	# Abre $HOSTS_TMP em $EDITOR
 	$EDITOR $HOSTS_TMP
 
+	# Etiqueta da modificação
+	echo -n "Etiqueta da modificação (Padrão: data/hora): "; read NAME
+	[[ -z $NAME ]] && NAME=$(date "+%d-%m-%y-%H-%M-%S")
+	
 	# Gera arquivo diff e remove tmp
-	DIFF=$DIFF_DIR/dothosts_medit_$(date "+%d-%m-%Y-%H-%M-%S").diff
+	DIFF=$DIFF_DIR/dothosts_medit_$NAME.diff
 	diff -u $HOSTS $HOSTS_TMP > $DIFF; rm $HOSTS_TMP
 
 	# Descarta diff se estive vázio
-	[[ -s $DIFF ]] && sudo patch $HOSTS $DIFF || rm $DIFF;
+	[[ -s $DIFF ]] && sudo patch $HOSTS $DIFF || rm $DIFF && echo "Não houve modificações. Saindo...";
 
 	return 0;
 }
