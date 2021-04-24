@@ -5,25 +5,24 @@
 # 2021 - Steven79203 
 
 #export EDITOR=nvim Coloque seu editor de preferência (nvim, vim nano, etc)
- export HOSTS_TMP=/tmp/hosts.tmp 	# Arquivo temporário com as mudanças
- export HOSTS=/etc/hosts 		# Arquivo original
- export PATT_TMP=/tmp/pattern.tmp 	# Padrões encontrados
- export DIFF_DIR=~/.config/hosts_diff/ 	  # Diretório dos .diffs
+ export HOSTS=/etc/hosts 				 # Arquivo original
+ export HOSTS_MOD=/tmp/hosts_mod.tmp     # Copia de trabalho 
+ export DIFF_DIR=~/.config/hosts_diff/ 	 # Diretório dos .diffs
 
 manual(){
 	# Cópia temporária para /tmp/dothosts.tmp
-	cp $HOSTS $HOSTS_TMP
+	cp $HOSTS $HOSTS_MOD
 	
-	# Abre $HOSTS_TMP em $EDITOR
-	$EDITOR $HOSTS_TMP
+	# Abre $HOSTS_MOD em $EDITOR
+	$EDITOR $HOSTS_MOD
 
 	# Etiqueta da modificação
-	echo -n "Etiqueta da modificação (Padrão: data/hora): "; read NAME
-	[[ -z $NAME ]] && NAME=$(date "+%d-%m-%y-%H-%M-%S")
+	echo -n "Etiqueta da modificação (Padrão: data/hora): "; read TAG
+	[[ -z $TAG ]] && TAG=$(date "+%d-%m-%y-%H-%M-%S")
 	
 	# Gera arquivo diff e remove tmp
-	DIFF=$DIFF_DIR/dothosts_medit_$NAME.diff
-	diff -u $HOSTS $HOSTS_TMP > $DIFF; rm $HOSTS_TMP
+	DIFF=$DIFF_DIR/dothosts_medit_$TAG.diff
+	diff -u $HOSTS $HOSTS_MOD > $DIFF; rm $HOSTS_MOD
 
 	# Descarta diff se estive vázio
 	if [[ -s $DIFF ]]; then
@@ -41,7 +40,10 @@ unblock(){
 
 	echo -n "PADRÃO: "; read PATT
 	DIFF=$DIFF_DIR/dothosts_$PATT.diff
-	sed "/^[^\#] *[a-zA-Z0-9\.\ ]*$PATT/ s/./#&/" $HOSTS > $PATT_TMP && diff -u $HOSTS $PATT_TMP > $DIFF
+
+	[[ -e $DIFF ]] && echo "Padrão já foi aplicado. Saindo..." && return 0;
+
+	sed "/^[^\#] *[a-zA-Z0-9\.\ ]*$PATT/ s/./#&/" $HOSTS > $HOSTS_MOD && diff -u $HOSTS $HOSTS_MOD > $DIFF
 
 	if [[ -s $DIFF ]]; then
 		bat $DIFF 
@@ -55,10 +57,10 @@ unblock(){
 		fi
 	else
 		rm $DIFF
-		echo "URL já desbloqueada ou padrão não encontrado. Saindo..."
+		echo "Padrão não encontrado. Saindo..."
 		return 0;
 	fi
-	rm $PATT_TMP
+	rm $HOSTS_MOD
 }
 
 undoredo(){
@@ -97,7 +99,6 @@ getFilesList(){
 }
 
 # Verifica se o diretório hosts_diff existe. Caso contrário cria um em ~/.config/hosts_diff
-
 [[ -e $DIFF_DIR ]] || mkdir $DIFF_DIR
 
 OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter/Reaplicar Patches" | dmenu -p "Operação: ")
