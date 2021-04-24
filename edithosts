@@ -8,7 +8,7 @@
  export HOSTS_TMP=/tmp/hosts.tmp 	# Arquivo temporário com as mudanças
  export HOSTS=/etc/hosts 		# Arquivo original
  export PATT_TMP=/tmp/pattern.tmp 	# Padrões encontrados
- export DIFF_DIR=~/.config/hosts_diff 	  # Diretório dos .diffs
+ export DIFF_DIR=~/.config/hosts_diff/ 	  # Diretório dos .diffs
 
 manual(){
 	# Cópia temporária para /tmp/dothosts.tmp
@@ -26,12 +26,18 @@ manual(){
 	diff -u $HOSTS $HOSTS_TMP > $DIFF; rm $HOSTS_TMP
 
 	# Descarta diff se estive vázio
-	[[ -s $DIFF ]] && sudo patch $HOSTS $DIFF || rm $DIFF && echo "Não houve modificações. Saindo...";
+	if [[ -s $DIFF ]]; then
+		sudo patch $HOSTS $DIFF
+	else
+		rm $DIFF && echo "Não houve modificações. Saindo...";
+	fi
 
 	return 0;
 }
 
-comment(){
+unblock(){
+	# Comenta linhas de código e desbloqueia os respectivos domínios,
+	# gerando diffs que podem ser revertidos/reaplicados sem digitar o padrão novamente
 
 	echo -n "PADRÃO: "; read PATT
 	DIFF=$DIFF_DIR/dothosts_$PATT.diff
@@ -55,27 +61,51 @@ comment(){
 	rm $PATT_TMP
 }
 
-uncomment(){
+undoredo(){
+	#Rebloquear domínios ou bloqueiar novamente a partir dos diffs antigos. 
+
 	# Verificando a presença de arquivos diff
-	[[ $(ls $DIFF_DIR | wc -l) == 0 ]] && echo "Sem histórico de modificações. Saindo..." && return 0;
-	while true; do
-		DIFF=$( ls $DIFF_DIR | grep "diff$" | dmenu -l 10 -p "Qual patch reverter?"); [[ -z $DIFF ]] && return 0;
+	MSG="Undo - Reverte patches\nRedo - Reaplica patches previamente feitos\n:"
+	echo -n -e $MSG; read OPR
+
+	case $OPR in 
+		'undo') SUFFIXO="diff";SUFFIXN="diff.old";ARG=-R ;;
+		'redo') SUFFIXO="diff.old";SUFFIXN="diff";ARG='';;
+		*) return 0;
+	esac
+
+	[[ $(getFilesList "$SUFFIXO" | wc -l) == 0 ]] && echo "Sem histórico de modificações. Saindo..." && return 0;
+
+	while true; do	
+		DIFF=$( getFilesList "$SUFFIXO" | dmenu -l 10 -p "Qual patch reverter?"); [[ -z $DIFF ]] && return 0;
 		RDIFF=$DIFF_DIR/$DIFF
 		bat $RDIFF
+		
 		echo -n "Aplicar mudanças? [S/N]: "; read CONF
-		[[ $CONF == 's' || $CONF == 'S' ]] && sudo patch -R $HOSTS "$RDIFF" && rm $RDIFF || continue;
+		
+		if [[ $CONF == 's' || $CONF == 'S' ]]; then
+			sudo patch $ARG $HOSTS $RDIFF 
+			mv $RDIFF ${RDIFF%${SUFFIXO}}$SUFFIXN
+		else
+			continue;
+		fi
 	done
 }
 
-# Verifica se o diretório hosts_diff existe. Caso contrário cria um em ~/.config/hosts_diff
-[[ -e !$DIFF_DIR ]] && mkdir ~/.config/hosts_diff
+getFilesList(){
+	ls $DIFF_DIR | grep "$1$"
+}
 
-OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter Mudanças" | dmenu -p "Operação: ")
+# Verifica se o diretório hosts_diff existe. Caso contrário cria um em ~/.config/hosts_diff
+
+[[ -e $DIFF_DIR ]] || mkdir $DIFF_DIR
+
+OP=$(echo -e "Edição Manual\nDesbloquear Domínios\nReverter/Reaplicar Patches" | dmenu -p "Operação: ")
 
 case $OP in
 	'Edição Manual') manual ;; 
-	'Desbloquear Domínios') comment ;;
-	'Reverter Mudanças') uncomment ;;
+	'Desbloquear Domínios') unblock ;;
+	'Reverter/Reaplicar Patches') undoredo ;;
 	*) return 0;
 esac
 
