@@ -4,16 +4,15 @@ Custom bash script to automate the blocking/unblocking of domains from my hosts 
 ## Operations
 Environment variables defined:
 * EDITOR - Default editor used on manual mode (default: vim)
-* HOSTS_TMP - Temporary copy from $HOSTS that receives the modifications on manual mode (default: /tmp/hosts.tmp)
+* HOSTS_MOD - Temporary copy of $HOSTS that receives the modifications on manual mode (default: /tmp/hosts.tmp)
 * HOSTS - Original file (default: /etc/hosts)
-* PATT_TMP - File with the modifications from the pattern mode (default: /tmp/pattern.tmp)
 * DIFF_DIR - Directory with the diffs (default: $HOME/.config/hosts_diff)
 
 The script have 3 operations:
 
-* **Manual changes** - Opens $HOSTS on $EDITOR. After any changes a .diff is generated on $DIFF_DIR which is used to patch $HOSTS. The diff files by default tag the files with date-time but you can insert a custom tag.
-* **Unblock by pattern** - Search a pattern by regex (EX: a domain's URL) on $HOSTS and comment all the lines that match it. Lines already commented are ignored by the script to avoid redundance. 
-* **Revert previous changes** - Revert the patches from a .diff file and delet it.
+* **Manual changes** - Opens $HOSTS on $EDITOR. After any changes a .diff is generated on $DIFF_DIR which is used to patch $HOSTS. The diff files by default tag the files with date-time but you can insert a custom tag (Ex: dothosts_medit_add-pattern.diff)
+* **Unblock by pattern** - Search for a pattern (EX: a domain's URL) on $HOSTS and comment all the lines that match it. You can pre-visualize the changes before applying them. Lines already commented are ignored by the script to avoid redundance since different patterns can have cross matches. 
+* **Undo/Redo previous changes** - Revert or reapply previous patches. Currently applied patches are identified by the suffix .diff and reverted patches have the suffix .diff.old. 
 
 ## DEPENDENCIES
 * bat - alternative to cat made in rust
